@@ -1,7 +1,39 @@
-rowCallback = JS(
-  "function(row, data) {
-     if (data[0] === 'Total') {
-       $(row).addClass('total-row');
-     }
-   }"
-)
+q5_feedback <- survey_long |>
+  filter(question_code == "guide") |>
+  mutate(
+    `Guide classification` = case_when(
+      str_detect(
+        str_to_lower(response),
+        "good|great|clear|helpful|useful|easy|works well|fine"
+      ) ~ "Works well",
+
+      str_detect(
+        str_to_lower(response),
+        "improve|unclear|confus|difficult|problem|issue|need|should|could|add|change"
+      ) ~ "Improvement suggested",
+
+      TRUE ~ "No substantive feedback"
+    )
+  ) |>
+  count(`Guide classification`, name = "Responses") |>
+  complete(
+    `Guide classification` = c(
+      "Works well",
+      "Improvement suggested",
+      "No substantive feedback"
+    ),
+    fill = list(Responses = 0)
+  ) |>
+  mutate(
+    Percentage = Responses / sum(Responses)
+  ) |>
+  arrange(
+    match(
+      `Guide classification`,
+      c(
+        "Works well",
+        "Improvement suggested",
+        "No substantive feedback"
+      )
+    )
+  )
