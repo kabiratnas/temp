@@ -51,3 +51,31 @@ if (!is.null(editable_column) && editable_column %in% names(data)) {
     )
   )
 }
+
+<style>
+
+/* Editable Proposed action cells */
+table.dataTable td.editable-action-cell {
+  min-width: 180px;
+  cursor: text;
+  background-color: rgba(0, 0, 0, 0.025);
+  outline: none;
+}
+
+table.dataTable td.editable-action-cell:focus {
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.22);
+}
+
+table.dataTable td.editable-action-cell:empty::before {
+  content: "Click to type";
+  opacity: 0.45;
+  font-style: italic;
+}
+
+</style>
+
+
+editable_column = "Proposed action",
+storage_key = "scorecard_q2_actions"
+
+`Proposed action` = ""
