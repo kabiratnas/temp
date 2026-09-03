@@ -1,6 +1,7 @@
-/* Bold Total row with top and bottom borders */
-table.dataTable tbody tr:last-child td {
-  font-weight: 700 !important;
-  border-top: 2px solid #333 !important;
-  border-bottom: 2px solid #333 !important;
-}
+rowCallback = JS(
+  "function(row, data) {
+     if (data[0] === 'Total') {
+       $(row).addClass('total-row');
+     }
+   }"
+)
