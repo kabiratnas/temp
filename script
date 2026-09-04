@@ -1,8 +1,63 @@
-q5_feedback <- bind_rows(
-  q5_feedback,
-  tibble(
-    `Guide classification` = "Total",
-    Responses = sum(q5_feedback$Responses),
-    Percentage = 1
-  )
+# Split Mixed responses across Positive and Negative.
+response_sentiment_3 <- bind_rows(
+  response_sentiment |>
+    filter(classification != "Mixed"),
+
+  response_sentiment |>
+    filter(classification == "Mixed") |>
+    mutate(classification = "Positive"),
+
+  response_sentiment |>
+    filter(classification == "Mixed") |>
+    mutate(classification = "Negative")
 )
+
+# Q1 is intentionally simple: overall response-level sentiment only.
+q1_sentiment <- response_sentiment_3 |>
+  filter(question_code == "overall") |>
+  mutate(
+    `Overall classification` = classification
+  ) |>
+  count(`Overall classification`, name = "Responses") |>
+  complete(
+    `Overall classification` = c("Positive", "Negative", "Neutral"),
+    fill = list(Responses = 0)
+  ) |>
+  mutate(Percentage = Responses / sum(Responses)) |>
+  arrange(
+    match(
+      `Overall classification`,
+      c("Positive", "Negative", "Neutral")
+    )
+  )
+
+# Restored overall sentiment table by survey question.
+# Each row uses the original survey question text.
+sentiment_by_question <- response_sentiment_3 |>
+  count(question_code, classification) |>
+  complete(
+    question_code = names(question_map),
+    classification = c("Positive", "Negative", "Neutral"),
+    fill = list(n = 0)
+  ) |>
+  mutate(
+    question = unname(question_map[question_code])
+  ) |>
+  pivot_wider(
+    names_from = classification,
+    values_from = n,
+    values_fill = 0
+  ) |>
+  mutate(
+    Total = Positive + Negative + Neutral,
+    Percentage = Total / respondent_total
+  ) |>
+  arrange(match(question_code, names(question_map))) |>
+  select(
+    Question = question,
+    Positive,
+    Negative,
+    Neutral,
+    Total,
+    Percentage
+  )
