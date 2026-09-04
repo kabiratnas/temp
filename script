@@ -7,24 +7,43 @@ q1_sentiment <- survey_sentences |>
     .groups = "drop"
   ) |>
   mutate(
-    Sentiment = case_when(
-      has_positive & has_negative ~ "Positive|Negative",
-      has_positive ~ "Positive",
-      has_negative ~ "Negative",
-      TRUE ~ "Neutral"
+    Positive = case_when(
+      has_positive & has_negative ~ 0.5,
+      has_positive ~ 1,
+      TRUE ~ 0
+    ),
+    Negative = case_when(
+      has_positive & has_negative ~ 0.5,
+      has_negative ~ 1,
+      TRUE ~ 0
+    ),
+    Neutral = case_when(
+      !has_positive & !has_negative ~ 1,
+      TRUE ~ 0
     )
   ) |>
-  separate_rows(Sentiment, sep = "\\|") |>
-  count(Sentiment, name = "Responses") |>
-  complete(
-    Sentiment = c("Positive", "Negative", "Neutral"),
-    fill = list(Responses = 0)
+  summarise(
+    Positive = sum(Positive),
+    Negative = sum(Negative),
+    Neutral = sum(Neutral)
+  ) |>
+  pivot_longer(
+    everything(),
+    names_to = "Sentiment",
+    values_to = "Responses"
   ) |>
   mutate(
-    Percentage = Responses / n_distinct(
-      survey_long$response_id[
-        survey_long$question_code == "overall"
-      ]
-    )
+    Percentage = Responses / sum(Responses)
   ) |>
   arrange(match(Sentiment, c("Positive", "Negative", "Neutral")))
+
+
+
+q1_sentiment <- bind_rows(
+  q1_sentiment,
+  tibble(
+    Sentiment = "Total",
+    Responses = sum(q1_sentiment$Responses),
+    Percentage = 1
+  )
+)
