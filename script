@@ -1,29 +1,30 @@
-q1_sentiment <- response_sentiment_3 |>
+q1_sentiment <- survey_sentences |>
   filter(question_code == "overall") |>
-  count(classification, name = "Responses") |>
+  group_by(response_id) |>
+  summarise(
+    has_positive = any(sentence_sentiment == "Positive"),
+    has_negative = any(sentence_sentiment == "Negative"),
+    .groups = "drop"
+  ) |>
+  mutate(
+    Sentiment = case_when(
+      has_positive & has_negative ~ "Positive|Negative",
+      has_positive ~ "Positive",
+      has_negative ~ "Negative",
+      TRUE ~ "Neutral"
+    )
+  ) |>
+  separate_rows(Sentiment, sep = "\\|") |>
+  count(Sentiment, name = "Responses") |>
   complete(
-    classification = c("Positive", "Negative", "Neutral"),
+    Sentiment = c("Positive", "Negative", "Neutral"),
     fill = list(Responses = 0)
   ) |>
   mutate(
     Percentage = Responses / n_distinct(
-      response_sentiment$respondent_id[
-        response_sentiment$question_code == "overall"
+      survey_long$response_id[
+        survey_long$question_code == "overall"
       ]
     )
   ) |>
-  arrange(match(classification, c("Positive", "Negative", "Neutral"))) |>
-  rename(Sentiment = classification)
-
-q1_sentiment <- bind_rows(
-  q1_sentiment,
-  tibble(
-    Sentiment = "Total",
-    Responses = n_distinct(
-      response_sentiment$respondent_id[
-        response_sentiment$question_code == "overall"
-      ]
-    ),
-    Percentage = 1
-  )
-)
+  arrange(match(Sentiment, c("Positive", "Negative", "Neutral")))
